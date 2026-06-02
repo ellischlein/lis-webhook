@@ -1,7 +1,7 @@
 {
   "name": "lis-webhook",
   "version": "1.0.0",
-  "description": "Webhook server that fetches live birth stats from Lis Hospital for ElevenLabs voice agent",
+  "description": "Webhook server that fetches live birth stats from Lis Hospital",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,6 +10,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "puppeteer": "^21.0.0"
   }
 }
