@@ -5,27 +5,24 @@ const PORT = process.env.PORT || 3000;
 const API_URL =
   "https://api.tasmc.org.il/api/bi/GetByCodes?codes[]=9&codes[]=10&codes[]=11&codes[]=12&codes[]=6&codes[]=7&codes[]=8&codes[]=5";
 
+const PROXY_URL = "https://corsproxy.io/?" + encodeURIComponent(API_URL);
+
 app.get("/lis-stats", async (req, res) => {
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(PROXY_URL, {
       headers: {
-        "Accept": "*/*",
-        "Accept-Language": "he-IL,he;q=0.9",
         "Origin": "https://www.tasmc.org.il",
         "Referer": "https://www.tasmc.org.il/lis/",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site"
       },
     });
 
-    console.log("API status:", response.status);
+    console.log("Proxy status:", response.status);
 
     if (!response.ok) {
       const text = await response.text();
-      console.log("API error body:", text);
-      return res.status(500).json({ error: "Failed to fetch data from Lis API", status: response.status });
+      console.log("Proxy error:", text);
+      return res.status(500).json({ error: "Failed to fetch data", status: response.status });
     }
 
     const data = await response.json();
