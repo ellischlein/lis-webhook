@@ -9,13 +9,23 @@ app.get("/lis-stats", async (req, res) => {
   try {
     const response = await fetch(API_URL, {
       headers: {
-        Origin: "https://www.tasmc.org.il",
-        Referer: "https://www.tasmc.org.il/",
+        "Accept": "*/*",
+        "Accept-Language": "he-IL,he;q=0.9",
+        "Origin": "https://www.tasmc.org.il",
+        "Referer": "https://www.tasmc.org.il/lis/",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-site"
       },
     });
 
+    console.log("API status:", response.status);
+
     if (!response.ok) {
-      return res.status(500).json({ error: "Failed to fetch data from Lis API" });
+      const text = await response.text();
+      console.log("API error body:", text);
+      return res.status(500).json({ error: "Failed to fetch data from Lis API", status: response.status });
     }
 
     const data = await response.json();
