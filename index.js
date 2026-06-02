@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 const API_URL =
   "https://api.tasmc.org.il/api/bi/GetByCodes?codes[]=9&codes[]=10&codes[]=11&codes[]=12&codes[]=6&codes[]=7&codes[]=8&codes[]=5";
@@ -20,7 +20,6 @@ app.get("/lis-stats", async (req, res) => {
 
     const data = await response.json();
 
-    // Helper: get value by code (takes the most recent entry)
     const getValue = (code) => {
       const entries = data
         .filter((item) => item.Code === String(code))
@@ -28,7 +27,6 @@ app.get("/lis-stats", async (req, res) => {
       return entries.length > 0 ? entries[0].Value : null;
     };
 
-    // Helper: get the latest monthly value for a code
     const getLatestMonthly = (code) => {
       const entries = data
         .filter((item) => item.Code === String(code) && item.Period === "חודשי")
@@ -60,6 +58,6 @@ app.get("/lis-stats", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Lis webhook running on port ${PORT}`);
 });
