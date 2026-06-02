@@ -1,42 +1,30 @@
 const express = require("express");
+const puppeteer = require("puppeteer");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const API_URL = "https://api.tasmc.org.il/api/bi/GetByCodes?codes[]=9&codes[]=10&codes[]=11&codes[]=12&codes[]=6&codes[]=7&codes[]=8&codes[]=5";
-
-async function fetchWithProxies() {
-  const proxies = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(API_URL)}`,
-    `https://corsproxy.io/?${encodeURIComponent(API_URL)}`,
-    `https://thingproxy.freeboard.io/fetch/${API_URL}`,
-  ];
-
-  for (const proxyUrl of proxies) {
-    try {
-      console.log("Trying proxy:", proxyUrl);
-      const response = await fetch(proxyUrl);
-      console.log("Status:", response.status);
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data) && data.length > 0) {
-          console.log("Success with proxy:", proxyUrl);
-          return data;
-        }
-      }
-    } catch (err) {
-      console.log("Proxy failed:", err.message);
-    }
-  }
-  return null;
-}
-
 app.get("/lis-stats", async (req, res) => {
+  let browser;
   try {
-    const data = await fetchWithProxies();
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
 
-    if (!data) {
-      return res.status(500).json({ error: "All proxies failed" });
-    }
+    const page = await browser.newPage();
+
+    const API_URL = "https://api.tasmc.org.il/api/bi/GetByCodes?codes[]=9&codes[]=10&codes[]=11&codes[]=12&codes[]=6&codes[]=7&codes[]=8&codes[]=5";
+
+    // Navigate to Lis first to get cookies/session
+    await page.goto("https://www.tasmc.org.il/lis/", { waitUntil: "networkidle2", timeout: 30000 });
+
+    // Now fetch the API from within the page context
+    const data = await page.evaluate(async (url) => {
+      const response = await fetch(url);
+      return response.json();
+    }, API_URL);
+
+    await browser.close();
 
     const getValue = (code) => {
       const entries = data
@@ -71,6 +59,7 @@ app.get("/lis-stats", async (req, res) => {
 
     res.json(result);
   } catch (err) {
+    if (browser) await browser.close();
     console.error(err);
     res.status(500).json({ error: "Internal server error", details: err.message });
   }
