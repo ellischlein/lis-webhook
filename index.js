@@ -2,30 +2,41 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const API_URL =
-  "https://api.tasmc.org.il/api/bi/GetByCodes?codes[]=9&codes[]=10&codes[]=11&codes[]=12&codes[]=6&codes[]=7&codes[]=8&codes[]=5";
+const API_URL = "https://api.tasmc.org.il/api/bi/GetByCodes?codes[]=9&codes[]=10&codes[]=11&codes[]=12&codes[]=6&codes[]=7&codes[]=8&codes[]=5";
 
-const PROXY_URL = "https://corsproxy.io/?" + encodeURIComponent(API_URL);
+async function fetchWithProxies() {
+  const proxies = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(API_URL)}`,
+    `https://corsproxy.io/?${encodeURIComponent(API_URL)}`,
+    `https://thingproxy.freeboard.io/fetch/${API_URL}`,
+  ];
+
+  for (const proxyUrl of proxies) {
+    try {
+      console.log("Trying proxy:", proxyUrl);
+      const response = await fetch(proxyUrl);
+      console.log("Status:", response.status);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          console.log("Success with proxy:", proxyUrl);
+          return data;
+        }
+      }
+    } catch (err) {
+      console.log("Proxy failed:", err.message);
+    }
+  }
+  return null;
+}
 
 app.get("/lis-stats", async (req, res) => {
   try {
-    const response = await fetch(PROXY_URL, {
-      headers: {
-        "Origin": "https://www.tasmc.org.il",
-        "Referer": "https://www.tasmc.org.il/lis/",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-    });
+    const data = await fetchWithProxies();
 
-    console.log("Proxy status:", response.status);
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.log("Proxy error:", text);
-      return res.status(500).json({ error: "Failed to fetch data", status: response.status });
+    if (!data) {
+      return res.status(500).json({ error: "All proxies failed" });
     }
-
-    const data = await response.json();
 
     const getValue = (code) => {
       const entries = data
